@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>In Hướng Dẫn Sử Dụng - MVP</title>
+    <!-- Kích hoạt plugin typography của Tailwind để tự động làm đẹp Markdown -->
+    <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <!-- Thêm thư viện đọc Markdown -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        /* CSS CHUYÊN DỤNG CHO VIỆC IN ẤN */
+        @media print {
+            /* Ẩn tất cả mọi thứ trên trang */
+            body * {
+                visibility: hidden;
+            }
+            /* Chỉ hiện khu vực cần in */
+            #print-area, #print-area * {
+                visibility: visible;
+            }
+            /* Reset lại vị trí khu vực in ra sát lề giấy trắng */
+            #print-area {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                margin: 0;
+                padding: 0;
+                box-shadow: none !important;
+                border: none !important;
+            }
+            /* Ẩn nút in bên trong khu vực in (nếu có) */
+            .no-print {
+                display: none !important;
+            }
+            /* Ngăn ngắt trang giữa chừng các đoạn văn */
+            p, li {
+                page-break-inside: avoid;
+            }
+            /* Xóa viền báo hiệu vùng có thể edit khi in thật */
+            .editable-field {
+                border: none !important;
+                background: transparent !important;
+                padding: 0 !important;
+            }
+        }
+        /* CSS cho vùng có thể edit trên màn hình web */
+        .editable-field {
+            border: 1px dashed transparent;
+            padding: 2px 4px;
+            border-radius: 4px;
+            transition: all 0.2s;
+            cursor: text;
+        }
+        .editable-field:hover, .editable-field:focus {
+            border-color: #93c5fd; /* blue-300 */
+            background-color: #eff6ff; /* blue-50 */
+            outline: none;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800 font-sans h-screen flex flex-col">
+
+    <!-- Header (Không in) -->
+    <header class="bg-blue-600 text-white p-4 shadow-md flex justify-between items-center no-print">
+        <h1 class="text-xl font-bold">In Hướng Dẫn Sử Dụng (MVP)</h1>
+        <span class="text-sm bg-blue-700 px-3 py-1 rounded-full">Dữ liệu nội bộ</span>
+    </header>
+
+    <main class="flex-1 flex overflow-hidden">
+        <!-- Cột trái: Tìm kiếm và Danh sách (Không in) -->
+        <aside class="w-1/3 bg-white border-r border-gray-200 flex flex-col no-print">
+            <div class="p-4 border-b border-gray-200">
+                <input type="text" id="searchInput" placeholder="Nhập SKU hoặc tên sản phẩm..." 
+                    class="w-full w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <ul id="productList" class="flex-1 overflow-y-auto p-2">
+                <!-- Danh sách sản phẩm sẽ được render ở đây bằng JS -->
+            </ul>
+            
+            <!-- Branding MinxLabs (Không in) -->
+            <div class="p-3 border-t border-gray-200 text-center text-xs text-gray-500 bg-gray-50 mt-auto">
+                ⚡ Một sản phẩm của <a href="https://minxlabs.studio" target="_blank" class="font-bold text-blue-600 hover:underline">minxlabs.studio</a>
+            </div>
+        </aside>
+
+        <!-- Cột phải: Xem trước và In -->
+        <section class="w-2/3 p-8 bg-gray-50 flex flex-col items-center overflow-y-auto">
+            
+            <!-- Khu vực Toolbar (Không in) -->
+            <div class="w-full max-w-2xl flex justify-between items-center mb-4 no-print">
+                <div class="flex items-center gap-4">
+                    <h2 class="text-lg font-semibold text-gray-600">Bản xem trước</h2>
+                    <select id="paperSize" class="border border-gray-300 rounded p-1 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="A4">Khổ A4 (210x297mm)</option>
+                        <option value="A5">Khổ A5 (148x210mm)</option>
+                        <option value="A6">Khổ A6 (105x148mm)</option>
+                        <option value="80mm">Bill nhiệt (80mm)</option>
+                    </select>
+                </div>
+                <button id="printBtn" onclick="window.print()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg shadow disabled:opacity-50 transition-colors" disabled>
+                    🖨️ In Ngay
+                </button>
+            </div>
+
+            <!-- KHU VỰC IN CHÍNH THỨC (Print Area) -->
+            <div id="print-area" class="bg-white shadow-xl border border-gray-200 mx-auto w-[210mm] min-h-[297mm] p-10 text-base">
+                
+                <div id="emptyState" class="h-full flex flex-col items-center justify-center text-gray-400 mt-20">
+                    <svg class="w-16 h-16 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                    <p>Chọn một sản phẩm bên trái để xem và in hướng dẫn</p>
+                </div>
+
+                <div id="manualContent" class="hidden">
+                    <div class="border-b-2 border-black pb-4 mb-6 text-center">
+                        <!-- HEADER CÓ THỂ EDIT -->
+                        <h1 id="docTitle" class="text-3xl font-bold uppercase tracking-wide editable-field inline-block" contenteditable="true" data-storage-key="savedHeaderTitle">Hướng Dẫn Sử Dụng</h1>
+                        <h2 id="previewName" class="text-xl font-semibold mt-2 text-gray-700">Tên sản phẩm</h2>
+                        <p class="text-sm text-gray-500 mt-1">Mã SP: <span id="previewSku" class="font-mono">SKU</span></p>
+                    </div>
+
+                    <div class="prose prose-lg max-w-none">
+                        <!-- Nội dung các bước (Markdown) sẽ được chèn vào đây -->
+                        <div id="previewSteps" class="pl-4"></div>
+                    </div>
+
+                    <!-- FOOTER CÓ THỂ EDIT -->
+                    <div class="mt-12 pt-6 border-t border-gray-300 text-center text-sm text-gray-500 font-medium opacity-80">
+                        <div id="docFooter" class="editable-field inline-block min-w-[50%]" contenteditable="true" data-storage-key="savedFooterText">
+                            Cảm ơn quý khách đã tin dùng sản phẩm của chúng tôi!<br>
+                            Nếu cần hỗ trợ, vui lòng liên hệ Zalo: 09xx.xxx.xxx
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // BƯỚC 1: KẾT NỐI DỮ LIỆU GOOGLE SHEETS
+        // Dán đường link "Công bố lên web dạng CSV" của bạn vào đây
+        const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQO48fF1Iih-Y2K0Q00eHn5z11vP1vGZfK_QpP4/pub?output=csv"; 
+        
+        let database = []; // Dữ liệu sẽ được kéo tự động về đây
+
+        // Lấy các element trên DOM
+        const searchInput = document.getElementById('searchInput');
+        const productList = document.getElementById('productList');
+        const printBtn = document.getElementById('printBtn');
+        const emptyState = document.getElementById('emptyState');
+        const manualContent = document.getElementById('manualContent');
+        const previewName = document.getElementById('previewName');
+        const previewSku = document.getElementById('previewSku');
+        const previewSteps = document.getElementById('previewSteps');
+        const paperSizeSelect = document.getElementById('paperSize');
+        const printArea = document.getElementById('print-area');
+
+        // BƯỚC 2: LOGIC LƯU TRỮ HEADER/FOOTER (Auto-Save)
+        function initEditableFields() {
+            const editableFields = document.querySelectorAll('.editable-field');
+            editableFields.forEach(field => {
+                const storageKey = field.getAttribute('data-storage-key');
+                
+                // 1. Tải dữ liệu đã lưu từ lần trước (nếu có)
+                const savedData = localStorage.getItem(storageKey);
+                if (savedData !== null) {
+                    field.innerHTML = savedData;
+                }
+
+                // 2. Lắng nghe sự kiện gõ phím và lưu ngay lập tức
+                field.addEventListener('input', () => {
+                    localStorage.setItem(storageKey, field.innerHTML);
+                });
+            });
+        }
+
+        // Hàm xóa dấu tiếng Việt để tìm kiếm không dấu
+        function removeAccents(str) {
+            return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+        }
+
+        // Logic đổi kích thước giấy
+        function updatePaperSize(size) {
+            // 1. Cập nhật CSS cho khung xem trước
+            const sizeMap = {
+                'A4': 'w-[210mm] min-h-[297mm] p-10 text-base',
+                'A5': 'w-[148mm] min-h-[210mm] p-6 text-sm',
+                'A6': 'w-[105mm] min-h-[148mm] p-4 text-xs',
+                '80mm': 'w-[80mm] min-h-auto p-2 text-[10px]' // Dành cho máy in bill nhiệt
+            };
+            printArea.className = `bg-white shadow-xl border border-gray-200 mx-auto ${sizeMap[size]}`;
+
+            // 2. Ép trình duyệt in đúng khổ giấy bằng cách chèn thẻ <style>
+            let styleEl = document.getElementById('dynamicPageStyle');
+            if (!styleEl) {
+                styleEl = document.createElement('style');
+                styleEl.id = 'dynamicPageStyle';
+                document.head.appendChild(styleEl);
+            }
+            // Thiết lập @page size cho máy in
+            const printSize = size === '80mm' ? '80mm auto' : size;
+            styleEl.innerHTML = `@media print { @page { size: ${printSize}; margin: 0; } }`;
+        }
+
+        // Gắn sự kiện đổi size giấy
+        paperSizeSelect.addEventListener('change', (e) => updatePaperSize(e.target.value));
+
+        // Hàm Tải dữ liệu Live từ Google Sheets
+        function loadDataFromSheets() {
+            productList.innerHTML = '<li class="p-4 text-blue-500 text-center animate-pulse font-medium">⏳ Đang đồng bộ dữ liệu...</li>';
+
+            // KIỂM TRA ĐÒN BẨY: Ngăn chặn gửi request nếu vẫn đang dùng link ảo (tránh lỗi Console đỏ)
+            if (SHEET_CSV_URL.includes("2PACX-1vQO48fF1Iih-Y2K0Q00eHn5z11vP1vGZfK_QpP4")) {
+                setTimeout(() => {
+                    database = [
+                        { 
+                            sku: "SP-TAYRUA", 
+                            name: "Chai xịt bọt tuyết tẩy rửa giày (Mẫu)", 
+                            manual: "### Các bước thực hiện:\n- **Bước 1:** Lắc đều chai dung dịch trước khi sử dụng.\n- **Bước 2:** Xịt trực tiếp một lượng *vừa đủ* lên bề mặt vết bẩn.\n- **Bước 3:** Dùng bàn chải lông mềm chà nhẹ nhàng theo hình tròn.\n- **Bước 4:** Dùng khăn khô lau sạch hoàn toàn phần bọt dư thừa.\n\n**Lưu ý:** Thử trên một góc nhỏ trước khi dùng toàn bộ." 
+                        },
+                        { 
+                            sku: "SP-KHUMUI", 
+                            name: "Xịt thảo dược khử mùi hôi chân (Mẫu)", 
+                            manual: "### Hướng dẫn nhanh:\n- **Bước 1:** Rửa sạch chân và lau khô hoàn toàn.\n- **Bước 2:** Xịt đều dung dịch lên lòng bàn chân và các kẽ ngón chân.\n- **Bước 3:** Đợi khoảng 1-2 phút cho dung dịch khô hẳn trước khi mang tất.\n\n*Sử dụng đều đặn mỗi ngày trước khi mang giày để đạt hiệu quả tốt nhất.*" 
+                        }
+                    ];
+                    renderList(database);
+
+                    const errorMsg = document.createElement('li');
+                    errorMsg.className = 'p-3 bg-blue-50 text-blue-700 text-sm border-b border-blue-100 text-center';
+                    errorMsg.innerHTML = '💡 <b>Đang dùng dữ liệu mẫu nội bộ.</b><br>Hãy đổi <code>SHEET_CSV_URL</code> thành link Google Sheets của bạn để tải dữ liệu thật.';
+                    productList.prepend(errorMsg);
+                }, 400); // Giả lập độ trễ mạng
+                return;
+            }
+
+            // Nếu đã đổi link thật, tiến hành fetch CSV
+            Papa.parse(SHEET_CSV_URL, {
+                download: true,
+                header: true,
+                complete: function(results) {
+                    database = results.data.map(row => ({
+                        sku: row['SKU'] || '',
+                        name: row['Tên sản phẩm'] || '',
+                        manual: row['Hướng dẫn sử dụng'] || ''
+                    })).filter(item => item.sku !== '');
+
+                    renderList(database);
+                },
+                error: function(err) {
+                    console.error("Lỗi tải CSV:", err);
+                    productList.innerHTML = '<li class="p-4 text-red-500 text-center">❌ Lỗi kết nối. Vui lòng kiểm tra lại Link CSV và cấu hình "Công bố lên web" của Google Sheets.</li>';
+                }
+            });
+        }
+
+        // Hàm Render danh sách bên trái
+        function renderList(data) {
+            productList.innerHTML = '';
+            if (data.length === 0) {
+                productList.innerHTML = '<li class="p-4 text-gray-500 text-center">Không tìm thấy sản phẩm...</li>';
+                return;
+            }
+
+            data.forEach(item => {
+                const li = document.createElement('li');
+                li.className = 'p-3 mb-2 bg-white hover:bg-blue-50 border border-gray-100 rounded-lg cursor-pointer transition-colors shadow-sm';
+                li.innerHTML = `
+                    <div class="font-bold text-gray-800">${item.sku}</div>
+                    <div class="text-sm text-gray-600 truncate">${item.name}</div>
+                `;
+                // Gắn sự kiện click để hiển thị chi tiết
+                li.onclick = () => showPreview(item);
+                productList.appendChild(li);
+            });
+        }
+
+        // Hàm hiển thị nội dung sang khung in ấn
+        function showPreview(item) {
+            emptyState.classList.add('hidden');
+            manualContent.classList.remove('hidden');
+            printBtn.disabled = false;
+
+            previewName.textContent = item.name;
+            previewSku.textContent = item.sku;
+
+            // Dùng Marked.js dịch văn bản Markdown từ Sheets thành HTML chuẩn mực
+            const rawManual = item.manual || "";
+            previewSteps.innerHTML = marked.parse(rawManual);
+        }
+
+        // Xử lý sự kiện tìm kiếm
+        searchInput.addEventListener('input', (e) => {
+            const rawKeyword = e.target.value;
+            const searchTerms = removeAccents(rawKeyword).split(' ').filter(t => t.trim() !== '');
+
+            const filteredData = database.filter(item => {
+                const searchableText = removeAccents(item.sku + ' ' + item.name);
+                return searchTerms.every(term => searchableText.includes(term));
+            });
+            renderList(filteredData);
+        });
+
+        // Khởi tạo lần đầu
+        initEditableFields(); // Khởi chạy tính năng edit header/footer
+        loadDataFromSheets(); 
+        updatePaperSize('A4');
+
+    </script>
+</body>
+</html>
