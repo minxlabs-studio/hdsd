@@ -4,60 +4,38 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>In Hướng Dẫn Sử Dụng - MVP</title>
-    <!-- Kích hoạt plugin typography của Tailwind để tự động làm đẹp Markdown -->
+    <!-- Tailwind cho Giao diện, Plugin Typography cho Markdown -->
     <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+    <!-- Thư viện đọc CSV từ Google Sheets -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
-    <!-- Thêm thư viện đọc Markdown -->
+    <!-- Thư viện đọc Markdown -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- Thư viện tạo QR Code -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    
     <style>
         /* CSS CHUYÊN DỤNG CHO VIỆC IN ẤN */
         @media print {
-            /* Ẩn tất cả mọi thứ trên trang */
-            body * {
-                visibility: hidden;
-            }
-            /* Chỉ hiện khu vực cần in */
-            #print-area, #print-area * {
-                visibility: visible;
-            }
-            /* Reset lại vị trí khu vực in ra sát lề giấy trắng */
+            body * { visibility: hidden; }
+            #print-area, #print-area * { visibility: visible; }
             #print-area {
-                position: absolute;
-                left: 0;
-                top: 0;
-                width: 100%;
-                margin: 0;
-                padding: 0;
-                box-shadow: none !important;
-                border: none !important;
+                position: absolute; left: 0; top: 0;
+                width: 100%; margin: 0; padding: 0;
+                box-shadow: none !important; border: none !important;
             }
-            /* Ẩn nút in bên trong khu vực in (nếu có) */
-            .no-print {
-                display: none !important;
-            }
-            /* Ngăn ngắt trang giữa chừng các đoạn văn */
-            p, li {
-                page-break-inside: avoid;
-            }
-            /* Xóa viền báo hiệu vùng có thể edit khi in thật */
+            .no-print { display: none !important; }
+            p, li { page-break-inside: avoid; }
             .editable-field {
-                border: none !important;
-                background: transparent !important;
-                padding: 0 !important;
+                border: none !important; background: transparent !important; padding: 0 !important;
             }
         }
         /* CSS cho vùng có thể edit trên màn hình web */
         .editable-field {
-            border: 1px dashed transparent;
-            padding: 2px 4px;
-            border-radius: 4px;
-            transition: all 0.2s;
-            cursor: text;
+            border: 1px dashed transparent; padding: 2px 4px; border-radius: 4px;
+            transition: all 0.2s; cursor: text;
         }
         .editable-field:hover, .editable-field:focus {
-            border-color: #93c5fd; /* blue-300 */
-            background-color: #eff6ff; /* blue-50 */
-            outline: none;
+            border-color: #93c5fd; background-color: #eff6ff; outline: none;
         }
     </style>
 </head>
@@ -66,31 +44,38 @@
     <!-- Header (Không in) -->
     <header class="bg-blue-600 text-white p-4 shadow-md flex justify-between items-center no-print">
         <h1 class="text-xl font-bold">In Hướng Dẫn Sử Dụng (MVP)</h1>
-        <span class="text-sm bg-blue-700 px-3 py-1 rounded-full">Dữ liệu nội bộ</span>
+        <div class="flex gap-2">
+            <!-- Cấu hình Link QR Code -->
+            <input type="text" id="qrLinkInput" placeholder="Nhập Link tạo mã QR (Zalo/Shopee)..." 
+                class="text-sm px-3 py-1 rounded text-gray-800 w-64 focus:outline-none"
+                title="Nhập đường link bạn muốn khách hàng quét bằng điện thoại">
+            <span class="text-sm bg-blue-700 px-3 py-1 rounded-full flex items-center">Dữ liệu nội bộ</span>
+        </div>
     </header>
 
     <main class="flex-1 flex overflow-hidden">
         <!-- Cột trái: Tìm kiếm và Danh sách (Không in) -->
         <aside class="w-1/3 bg-white border-r border-gray-200 flex flex-col no-print">
             <div class="p-4 border-b border-gray-200">
-                <input type="text" id="searchInput" placeholder="Nhập SKU hoặc tên sản phẩm..." 
-                    class="w-full w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <!-- Thuộc tính autofocus cho súng quét mã vạch -->
+                <input type="text" id="searchInput" placeholder="Nhập SKU hoặc quét mã vạch..." autofocus
+                    class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-yellow-50 focus:bg-white transition-colors">
             </div>
             <ul id="productList" class="flex-1 overflow-y-auto p-2">
-                <!-- Danh sách sản phẩm sẽ được render ở đây bằng JS -->
+                <!-- Danh sách sản phẩm -->
             </ul>
             
-            <!-- Branding MinxLabs (Không in) -->
+            <!-- Branding -->
             <div class="p-3 border-t border-gray-200 text-center text-xs text-gray-500 bg-gray-50 mt-auto">
                 ⚡ Một sản phẩm của <a href="https://minxlabs.studio" target="_blank" class="font-bold text-blue-600 hover:underline">minxlabs.studio</a>
             </div>
         </aside>
 
         <!-- Cột phải: Xem trước và In -->
-        <section class="w-2/3 p-8 bg-gray-50 flex flex-col items-center overflow-y-auto">
+        <section class="w-2/3 p-8 bg-gray-50 flex flex-col items-center overflow-y-auto relative">
             
             <!-- Khu vực Toolbar (Không in) -->
-            <div class="w-full max-w-2xl flex justify-between items-center mb-4 no-print">
+            <div class="w-full max-w-2xl flex justify-between items-center mb-4 no-print sticky top-0 bg-gray-50 py-2 z-10">
                 <div class="flex items-center gap-4">
                     <h2 class="text-lg font-semibold text-gray-600">Bản xem trước</h2>
                     <select id="paperSize" class="border border-gray-300 rounded p-1 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
@@ -101,36 +86,40 @@
                     </select>
                 </div>
                 <button id="printBtn" onclick="window.print()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg shadow disabled:opacity-50 transition-colors" disabled>
-                    🖨️ In Ngay
+                    🖨️ In Ngay (Ctrl+P)
                 </button>
             </div>
 
             <!-- KHU VỰC IN CHÍNH THỨC (Print Area) -->
-            <div id="print-area" class="bg-white shadow-xl border border-gray-200 mx-auto w-[210mm] min-h-[297mm] p-10 text-base">
+            <div id="print-area" class="bg-white shadow-xl border border-gray-200 mx-auto w-[210mm] min-h-[297mm] p-10 text-base flex flex-col">
                 
-                <div id="emptyState" class="h-full flex flex-col items-center justify-center text-gray-400 mt-20">
-                    <svg class="w-16 h-16 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                <div id="emptyState" class="h-full flex flex-col items-center justify-center text-gray-400 mt-20 my-auto">
+                    <svg class="w-16 h-16 mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                     <p>Chọn một sản phẩm bên trái để xem và in hướng dẫn</p>
                 </div>
 
-                <div id="manualContent" class="hidden">
+                <div id="manualContent" class="hidden flex-1 flex flex-col">
                     <div class="border-b-2 border-black pb-4 mb-6 text-center">
-                        <!-- HEADER CÓ THỂ EDIT -->
                         <h1 id="docTitle" class="text-3xl font-bold uppercase tracking-wide editable-field inline-block" contenteditable="true" data-storage-key="savedHeaderTitle">Hướng Dẫn Sử Dụng</h1>
                         <h2 id="previewName" class="text-xl font-semibold mt-2 text-gray-700">Tên sản phẩm</h2>
                         <p class="text-sm text-gray-500 mt-1">Mã SP: <span id="previewSku" class="font-mono">SKU</span></p>
                     </div>
 
-                    <div class="prose prose-lg max-w-none">
-                        <!-- Nội dung các bước (Markdown) sẽ được chèn vào đây -->
+                    <!-- Phần nội dung kéo dãn linh hoạt để đẩy Footer xuống đáy -->
+                    <div class="prose prose-lg max-w-none flex-1">
                         <div id="previewSteps" class="pl-4"></div>
                     </div>
 
-                    <!-- FOOTER CÓ THỂ EDIT -->
-                    <div class="mt-12 pt-6 border-t border-gray-300 text-center text-sm text-gray-500 font-medium opacity-80">
-                        <div id="docFooter" class="editable-field inline-block min-w-[50%]" contenteditable="true" data-storage-key="savedFooterText">
-                            Cảm ơn quý khách đã tin dùng sản phẩm của chúng tôi!<br>
-                            Nếu cần hỗ trợ, vui lòng liên hệ Zalo: 09xx.xxx.xxx
+                    <!-- FOOTER CÓ THỂ EDIT + QR CODE -->
+                    <div class="mt-8 pt-6 border-t border-gray-300 flex items-center justify-center gap-6">
+                        <!-- Vùng chứa QR Code -->
+                        <div id="qrcodeContainer" class="p-1 bg-white border border-gray-200 rounded hidden"></div>
+                        
+                        <div class="text-sm text-gray-600 font-medium">
+                            <div id="docFooter" class="editable-field inline-block" contenteditable="true" data-storage-key="savedFooterText">
+                                Cảm ơn quý khách đã tin dùng sản phẩm của chúng tôi!<br>
+                                Cần hỗ trợ hoặc mua lại với giá ưu đãi? Quét mã bên cạnh 👉
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -141,12 +130,11 @@
 
     <script>
         // BƯỚC 1: KẾT NỐI DỮ LIỆU GOOGLE SHEETS
-        // Dán đường link "Công bố lên web dạng CSV" của bạn vào đây
         const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQO48fF1Iih-Y2K0Q00eHn5z11vP1vGZfK_QpP4/pub?output=csv"; 
         
-        let database = []; // Dữ liệu sẽ được kéo tự động về đây
+        let database = []; 
+        let qrCodeInstance = null; // Lưu đối tượng mã QR
 
-        // Lấy các element trên DOM
         const searchInput = document.getElementById('searchInput');
         const productList = document.getElementById('productList');
         const printBtn = document.getElementById('printBtn');
@@ -157,62 +145,84 @@
         const previewSteps = document.getElementById('previewSteps');
         const paperSizeSelect = document.getElementById('paperSize');
         const printArea = document.getElementById('print-area');
+        const qrLinkInput = document.getElementById('qrLinkInput');
+        const qrcodeContainer = document.getElementById('qrcodeContainer');
 
         // BƯỚC 2: LOGIC LƯU TRỮ HEADER/FOOTER (Auto-Save)
         function initEditableFields() {
             const editableFields = document.querySelectorAll('.editable-field');
             editableFields.forEach(field => {
                 const storageKey = field.getAttribute('data-storage-key');
-                
-                // 1. Tải dữ liệu đã lưu từ lần trước (nếu có)
                 const savedData = localStorage.getItem(storageKey);
-                if (savedData !== null) {
-                    field.innerHTML = savedData;
-                }
+                if (savedData !== null) field.innerHTML = savedData;
 
-                // 2. Lắng nghe sự kiện gõ phím và lưu ngay lập tức
                 field.addEventListener('input', () => {
                     localStorage.setItem(storageKey, field.innerHTML);
                 });
             });
         }
 
-        // Hàm xóa dấu tiếng Việt để tìm kiếm không dấu
+        // BƯỚC 3: LOGIC QR CODE (Marketing Asset)
+        function generateQRCode(link) {
+            qrcodeContainer.innerHTML = ''; // Xóa QR cũ
+            if (!link || link.trim() === '') {
+                qrcodeContainer.classList.add('hidden');
+                return;
+            }
+            qrcodeContainer.classList.remove('hidden');
+            qrCodeInstance = new QRCode(qrcodeContainer, {
+                text: link,
+                width: 70, // Kích thước in vừa vặn không bị nhòe
+                height: 70,
+                colorDark : "#000000",
+                colorLight : "#ffffff",
+                correctLevel : QRCode.CorrectLevel.L
+            });
+        }
+
+        function initQRCodeSystem() {
+            // Tải link đã lưu từ lần trước
+            const savedQrLink = localStorage.getItem('savedQrLink');
+            if (savedQrLink) {
+                qrLinkInput.value = savedQrLink;
+                generateQRCode(savedQrLink);
+            }
+
+            // Lắng nghe thay đổi khi bạn nhập Link mới
+            qrLinkInput.addEventListener('input', (e) => {
+                const newLink = e.target.value;
+                localStorage.setItem('savedQrLink', newLink);
+                generateQRCode(newLink);
+            });
+        }
+
         function removeAccents(str) {
             return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
         }
 
-        // Logic đổi kích thước giấy
         function updatePaperSize(size) {
-            // 1. Cập nhật CSS cho khung xem trước
             const sizeMap = {
                 'A4': 'w-[210mm] min-h-[297mm] p-10 text-base',
                 'A5': 'w-[148mm] min-h-[210mm] p-6 text-sm',
                 'A6': 'w-[105mm] min-h-[148mm] p-4 text-xs',
-                '80mm': 'w-[80mm] min-h-auto p-2 text-[10px]' // Dành cho máy in bill nhiệt
+                '80mm': 'w-[80mm] min-h-auto p-2 text-[10px]' 
             };
-            printArea.className = `bg-white shadow-xl border border-gray-200 mx-auto ${sizeMap[size]}`;
+            printArea.className = `bg-white shadow-xl border border-gray-200 mx-auto flex flex-col ${sizeMap[size]}`;
 
-            // 2. Ép trình duyệt in đúng khổ giấy bằng cách chèn thẻ <style>
             let styleEl = document.getElementById('dynamicPageStyle');
             if (!styleEl) {
                 styleEl = document.createElement('style');
                 styleEl.id = 'dynamicPageStyle';
                 document.head.appendChild(styleEl);
             }
-            // Thiết lập @page size cho máy in
             const printSize = size === '80mm' ? '80mm auto' : size;
             styleEl.innerHTML = `@media print { @page { size: ${printSize}; margin: 0; } }`;
         }
-
-        // Gắn sự kiện đổi size giấy
         paperSizeSelect.addEventListener('change', (e) => updatePaperSize(e.target.value));
 
-        // Hàm Tải dữ liệu Live từ Google Sheets
         function loadDataFromSheets() {
             productList.innerHTML = '<li class="p-4 text-blue-500 text-center animate-pulse font-medium">⏳ Đang đồng bộ dữ liệu...</li>';
 
-            // KIỂM TRA ĐÒN BẨY: Ngăn chặn gửi request nếu vẫn đang dùng link ảo (tránh lỗi Console đỏ)
             if (SHEET_CSV_URL.includes("2PACX-1vQO48fF1Iih-Y2K0Q00eHn5z11vP1vGZfK_QpP4")) {
                 setTimeout(() => {
                     database = [
@@ -228,16 +238,14 @@
                         }
                     ];
                     renderList(database);
-
                     const errorMsg = document.createElement('li');
                     errorMsg.className = 'p-3 bg-blue-50 text-blue-700 text-sm border-b border-blue-100 text-center';
                     errorMsg.innerHTML = '💡 <b>Đang dùng dữ liệu mẫu nội bộ.</b><br>Hãy đổi <code>SHEET_CSV_URL</code> thành link Google Sheets của bạn để tải dữ liệu thật.';
                     productList.prepend(errorMsg);
-                }, 400); // Giả lập độ trễ mạng
+                }, 400);
                 return;
             }
 
-            // Nếu đã đổi link thật, tiến hành fetch CSV
             Papa.parse(SHEET_CSV_URL, {
                 download: true,
                 header: true,
@@ -247,7 +255,6 @@
                         name: row['Tên sản phẩm'] || '',
                         manual: row['Hướng dẫn sử dụng'] || ''
                     })).filter(item => item.sku !== '');
-
                     renderList(database);
                 },
                 error: function(err) {
@@ -257,7 +264,6 @@
             });
         }
 
-        // Hàm Render danh sách bên trái
         function renderList(data) {
             productList.innerHTML = '';
             if (data.length === 0) {
@@ -272,13 +278,11 @@
                     <div class="font-bold text-gray-800">${item.sku}</div>
                     <div class="text-sm text-gray-600 truncate">${item.name}</div>
                 `;
-                // Gắn sự kiện click để hiển thị chi tiết
                 li.onclick = () => showPreview(item);
                 productList.appendChild(li);
             });
         }
 
-        // Hàm hiển thị nội dung sang khung in ấn
         function showPreview(item) {
             emptyState.classList.add('hidden');
             manualContent.classList.remove('hidden');
@@ -286,13 +290,10 @@
 
             previewName.textContent = item.name;
             previewSku.textContent = item.sku;
-
-            // Dùng Marked.js dịch văn bản Markdown từ Sheets thành HTML chuẩn mực
             const rawManual = item.manual || "";
             previewSteps.innerHTML = marked.parse(rawManual);
         }
 
-        // Xử lý sự kiện tìm kiếm
         searchInput.addEventListener('input', (e) => {
             const rawKeyword = e.target.value;
             const searchTerms = removeAccents(rawKeyword).split(' ').filter(t => t.trim() !== '');
@@ -304,8 +305,9 @@
             renderList(filteredData);
         });
 
-        // Khởi tạo lần đầu
-        initEditableFields(); // Khởi chạy tính năng edit header/footer
+        // Khởi động các Module
+        initEditableFields();
+        initQRCodeSystem(); 
         loadDataFromSheets(); 
         updatePaperSize('A4');
 
