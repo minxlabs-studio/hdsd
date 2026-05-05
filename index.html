@@ -16,29 +16,35 @@
     <style>
         /* CSS CHUYÊN DỤNG CHO VIỆC IN ẤN */
         @media print {
-            body * { visibility: hidden; }
-            #print-area, #print-area * { visibility: visible; }
-            #print-area {
-                position: absolute; left: 0; top: 0;
-                width: 100%; margin: 0; padding: 0;
-                box-shadow: none !important; border: none !important;
+            html, body, main, section {
+                height: auto !important;
+                min-height: auto !important;
+                overflow: visible !important;
+                width: 100% !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                display: block !important;
             }
             .no-print { display: none !important; }
-            p, li { page-break-inside: avoid; }
-            .editable-field {
-                border: none !important; background: transparent !important; padding: 0 !important;
+            #print-area {
+                width: 100% !important; margin: 0 !important; padding: 0 !important;
+                box-shadow: none !important; border: none !important;
+                display: block !important; min-height: auto !important; position: static !important;
             }
+            h1, h2, h3, h4 { page-break-after: avoid; break-after: avoid; }
+            p, li, img, blockquote { page-break-inside: avoid; break-inside: avoid; }
+            .editable-field { border: none !important; background: transparent !important; padding: 0 !important; }
         }
+        
         /* CSS cho vùng có thể edit trên màn hình web */
         .editable-field {
             border: 1px dashed transparent; padding: 2px 4px; border-radius: 4px;
             transition: all 0.2s; cursor: text;
         }
         .editable-field:hover, .editable-field:focus {
-            border-color: #93c5fd; background-color: #eff6ff; outline: none;
+            border-color: #93c5fd; background-color: #eff6ff; outline: none; box-shadow: 0 0 0 2px rgba(147,197,253,0.3);
         }
         
-        /* Tối ưu thanh scrollbar cho Textarea */
         textarea::-webkit-scrollbar { width: 8px; }
         textarea::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
         textarea::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
@@ -51,7 +57,6 @@
     <header class="bg-blue-600 text-white p-4 shadow-md flex justify-between items-center no-print z-10">
         <h1 class="text-xl font-bold">In Hướng Dẫn Sử Dụng (MVP)</h1>
         <div class="flex gap-2">
-            <!-- Cấu hình Link QR Code -->
             <input type="text" id="qrLinkInput" placeholder="Nhập Link tạo mã QR (Zalo/Shopee)..." 
                 class="text-sm px-3 py-1 rounded text-gray-800 w-64 focus:outline-none"
                 title="Nhập đường link bạn muốn khách hàng quét bằng điện thoại">
@@ -65,20 +70,16 @@
             <div class="p-4 border-b border-gray-200 flex flex-col gap-3">
                 <div class="flex justify-between items-center">
                     <h3 class="font-bold text-gray-700">Danh sách SP</h3>
-                    <!-- Nút Thêm Mới -->
                     <button onclick="openAddModal()" class="bg-blue-100 text-blue-700 px-3 py-1 rounded text-sm font-semibold hover:bg-blue-200 transition-colors shadow-sm">
                         + Thêm trực tiếp
                     </button>
                 </div>
-                <!-- Thuộc tính autofocus cho súng quét mã vạch -->
                 <input type="text" id="searchInput" placeholder="Nhập SKU hoặc quét mã vạch..." autofocus
                     class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-yellow-50 focus:bg-white transition-colors">
             </div>
             <ul id="productList" class="flex-1 overflow-y-auto p-2">
                 <!-- Danh sách sản phẩm -->
             </ul>
-            
-            <!-- Branding -->
             <div class="p-3 border-t border-gray-200 text-center text-xs text-gray-500 bg-gray-50 mt-auto">
                 ⚡ Một sản phẩm của <a href="https://minxlabs.studio" target="_blank" class="font-bold text-blue-600 hover:underline">minxlabs.studio</a>
             </div>
@@ -89,21 +90,40 @@
             
             <!-- Khu vực Toolbar (Không in) -->
             <div class="w-full max-w-2xl flex justify-between items-center mb-4 no-print sticky top-0 bg-gray-50 py-2 z-10">
-                <div class="flex items-center gap-4">
-                    <h2 class="text-lg font-semibold text-gray-600">Bản xem trước</h2>
-                    <select id="paperSize" class="border border-gray-300 rounded p-1 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <option value="A4">Khổ A4 (210x297mm)</option>
-                        <option value="A5">Khổ A5 (148x210mm)</option>
-                        <option value="A6">Khổ A6 (105x148mm)</option>
-                        <option value="80mm">Bill nhiệt (80mm)</option>
+                <div class="flex items-center gap-3">
+                    <h2 class="text-lg font-semibold text-gray-600 mr-2">Bản xem trước</h2>
+                    
+                    <!-- ĐÒN BẨY: BỘ CÔNG CỤ ÉP TRANG -->
+                    <div class="flex items-center gap-1 bg-white p-1 rounded border border-gray-300 shadow-sm">
+                        <span class="text-xs text-gray-500 font-bold px-1" title="Cỡ chữ">A</span>
+                        <button onclick="changeFormatting('fontSize', -1)" class="px-2 py-0.5 hover:bg-gray-200 rounded text-sm font-bold">-</button>
+                        <button onclick="changeFormatting('fontSize', 1)" class="px-2 py-0.5 hover:bg-gray-200 rounded text-sm font-bold">+</button>
+                    </div>
+                    
+                    <div class="flex items-center gap-1 bg-white p-1 rounded border border-gray-300 shadow-sm">
+                        <span class="text-xs text-gray-500 font-bold px-1" title="Khoảng cách dòng">↕</span>
+                        <button onclick="changeFormatting('lineHeight', -0.1)" class="px-2 py-0.5 hover:bg-gray-200 rounded text-sm font-bold">-</button>
+                        <button onclick="changeFormatting('lineHeight', 0.1)" class="px-2 py-0.5 hover:bg-gray-200 rounded text-sm font-bold">+</button>
+                    </div>
+
+                    <!-- ĐÒN BẨY: NÚT AUTO-FIT -->
+                    <button onclick="autoFit()" class="px-3 py-1 ml-1 bg-indigo-100 text-indigo-700 hover:bg-indigo-200 rounded border border-indigo-200 text-sm font-bold shadow-sm transition-colors flex items-center gap-1" title="Tự động thu nhỏ để vừa 1 trang giấy">
+                        🪄 Auto-Fit
+                    </button>
+
+                    <select id="paperSize" class="border border-gray-300 rounded p-1 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm ml-2">
+                        <option value="A4">A4 (210x297)</option>
+                        <option value="A5">A5 (148x210)</option>
+                        <option value="A6">A6 (105x148)</option>
+                        <option value="80mm">Bill 80mm</option>
                     </select>
                 </div>
                 <button id="printBtn" onclick="window.print()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg shadow disabled:opacity-50 transition-colors" disabled>
-                    🖨️ In Ngay (Ctrl+P)
+                    🖨️ In Ngay
                 </button>
             </div>
 
-            <!-- KHU VỰC IN CHÍNH THỨC (Print Area) -->
+            <!-- KHU VỰC IN CHÍNH THỨC -->
             <div id="print-area" class="bg-white shadow-xl border border-gray-200 mx-auto w-[210mm] min-h-[297mm] p-10 text-base flex flex-col relative z-0">
                 
                 <div id="emptyState" class="h-full flex flex-col items-center justify-center text-gray-400 mt-20 my-auto">
@@ -112,22 +132,23 @@
                 </div>
 
                 <div id="manualContent" class="hidden flex-1 flex flex-col">
-                    <div class="border-b-2 border-black pb-4 mb-6 text-center">
+                    <div class="border-b-2 border-black pb-4 mb-6 text-center w-full">
                         <h1 id="docTitle" class="text-3xl font-bold uppercase tracking-wide editable-field inline-block" contenteditable="true" data-storage-key="savedHeaderTitle">Hướng Dẫn Sử Dụng</h1>
-                        <h2 id="previewName" class="text-xl font-semibold mt-2 text-gray-700">Tên sản phẩm</h2>
-                        <p class="text-sm text-gray-500 mt-1">Mã SP: <span id="previewSku" class="font-mono">SKU</span></p>
-                    </div>
-
-                    <!-- Phần nội dung kéo dãn linh hoạt để đẩy Footer xuống đáy -->
-                    <div class="prose prose-lg max-w-none flex-1">
-                        <div id="previewSteps" class="pl-4"></div>
-                    </div>
-
-                    <!-- FOOTER CÓ THỂ EDIT + QR CODE -->
-                    <div class="mt-8 pt-6 border-t border-gray-300 flex items-center justify-center gap-6">
-                        <!-- Vùng chứa QR Code -->
-                        <div id="qrcodeContainer" class="p-1 bg-white border border-gray-200 rounded hidden"></div>
                         
+                        <!-- ĐÒN BẨY 1: Tự động xuống dòng cho Tên SP dài (block + break-words) -->
+                        <h2 id="previewName" class="text-xl font-semibold mt-3 text-gray-700 editable-field block w-full break-words leading-snug" contenteditable="true">Tên sản phẩm</h2>
+                        
+                        <!-- ĐÒN BẨY 2: Mở lại Mã SP. Chỉnh sửa tự do, muốn ẩn thì bôi đen xóa dòng text đi là xong -->
+                        <p class="text-sm text-gray-500 mt-2">Mã SP: <span id="previewSku" class="font-mono editable-field" contenteditable="true">SKU</span></p>
+                    </div>
+
+                    <!-- ĐÒN BẨY: Biến khung hiển thị Markdown thành Live Editor (Chữa cháy trực tiếp) -->
+                    <div class="prose max-w-none flex-1">
+                        <div id="previewSteps" class="pl-4 editable-field outline-none" contenteditable="true" style="font-size: 18px; line-height: 1.6;"></div>
+                    </div>
+
+                    <div class="mt-8 pt-6 border-t border-gray-300 flex items-center justify-center gap-6">
+                        <div id="qrcodeContainer" class="p-1 bg-white border border-gray-200 rounded hidden"></div>
                         <div class="text-sm text-gray-600 font-medium">
                             <div id="docFooter" class="editable-field inline-block" contenteditable="true" data-storage-key="savedFooterText">
                                 Cảm ơn quý khách đã tin dùng sản phẩm của chúng tôi!<br>
@@ -155,7 +176,6 @@
                     <input type="text" id="newName" required placeholder="Nhập tên sản phẩm..." class="w-full border border-gray-300 p-2 rounded focus:ring-2 focus:ring-blue-500 outline-none">
                 </div>
                 
-                <!-- Giao diện soạn thảo WYSIWYG nhẹ -->
                 <div>
                     <label class="block text-sm font-bold text-gray-700 mb-1 flex justify-between items-end">
                         <span>Nội dung hướng dẫn</span>
@@ -190,7 +210,6 @@
                             </button>
                         </div>
                         
-                        <!-- Khung nhập liệu (tăng kích thước font cho dễ nhìn) -->
                         <textarea id="newManual" required rows="7" 
                             placeholder="Nhập hướng dẫn sử dụng vào đây...&#10;Bôi đen chữ và chọn nút ở trên để định dạng." 
                             class="w-full p-3 outline-none font-sans text-base resize-y bg-white text-gray-800 leading-relaxed"></textarea>
@@ -206,11 +225,14 @@
     </div>
 
     <script>
-        // BƯỚC 1: KẾT NỐI DỮ LIỆU GOOGLE SHEETS & LOCAL STORAGE
         const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ5P9nKbWn2CdRxWbnFyu_1jeIvcEgHVq1_20JER23luwP06W88v1QHJKclL4_RNxZRXJm0aJ4bMfdZ/pub?output=csv"; 
         
-        let database = []; // Mảng chứa toàn bộ data (Sheets + Local)
+        let database = []; 
         let qrCodeInstance = null;
+
+        // Trạng thái định dạng nội dung
+        let currentFontSize = 18; 
+        let currentLineHeight = 1.6;
 
         const searchInput = document.getElementById('searchInput');
         const productList = document.getElementById('productList');
@@ -224,7 +246,58 @@
         const printArea = document.getElementById('print-area');
         const qrLinkInput = document.getElementById('qrLinkInput');
         const qrcodeContainer = document.getElementById('qrcodeContainer');
-        const newManualTextarea = document.getElementById('newManual'); // NÂNG CẤP BẮT SỰ KIỆN PASTE
+        const newManualTextarea = document.getElementById('newManual');
+
+        // BƯỚC MỚI: HÀM TỰ ĐỘNG ÉP TRANG (AUTO-FIT)
+        function autoFit() {
+            const size = paperSizeSelect.value;
+            if (size === '80mm') return; // Không áp dụng cho bill nhiệt
+
+            const content = document.getElementById('manualContent');
+            
+            // Chiều cao an toàn lý thuyết (px) đã trừ hao phần Header, Footer và Padding
+            const targetHeights = {
+                'A4': 920, 
+                'A5': 620,
+                'A6': 380
+            };
+            const targetHeight = targetHeights[size];
+
+            // Reset về mức chuẩn trước khi ép
+            currentFontSize = 18; 
+            currentLineHeight = 1.6;
+            previewSteps.style.fontSize = `${currentFontSize}px`;
+            previewSteps.style.lineHeight = currentLineHeight;
+
+            // Vòng lặp ép dần
+            let safetyCounter = 0;
+            while (content.scrollHeight > targetHeight && currentFontSize > 11 && safetyCounter < 30) {
+                currentFontSize -= 0.5;
+                previewSteps.style.fontSize = `${currentFontSize}px`;
+                
+                // Nếu font đã khá nhỏ, bóp thêm khoảng cách dòng để cứu vãn
+                if (currentFontSize <= 14 && currentLineHeight > 1.2) {
+                    currentLineHeight -= 0.05;
+                    previewSteps.style.lineHeight = currentLineHeight;
+                }
+                safetyCounter++;
+            }
+        }
+
+        // HÀM ĐIỀU CHỈNH FONT/LINE-HEIGHT (MANUAL)
+        function changeFormatting(type, delta) {
+            if(type === 'fontSize') {
+                currentFontSize += delta;
+                if(currentFontSize < 10) currentFontSize = 10; // Giới hạn nhỏ nhất
+                if(currentFontSize > 32) currentFontSize = 32; // Giới hạn lớn nhất
+                previewSteps.style.fontSize = `${currentFontSize}px`;
+            } else if (type === 'lineHeight') {
+                currentLineHeight += delta;
+                if(currentLineHeight < 1.0) currentLineHeight = 1.0;
+                if(currentLineHeight > 2.5) currentLineHeight = 2.5;
+                previewSteps.style.lineHeight = currentLineHeight;
+            }
+        }
 
         // Logic Modal Thêm Mới
         const addModal = document.getElementById('addModal');
@@ -240,28 +313,17 @@
             addForm.reset();
         }
 
-        // --- NÂNG CẤP: TỰ ĐỘNG DỌN DẸP DỮ LIỆU KHI COPY (Paste Interceptor) ---
         newManualTextarea.addEventListener('paste', function(e) {
             e.preventDefault();
-            // Lấy văn bản thô từ clipboard
             let pasteText = (e.clipboardData || window.clipboardData).getData('text');
-
-            // 1. Chuyển đổi các dấu bullet dị biệt của Word (•, ▪, o, ➢, ✓) thành dấu `- ` của Markdown
             pasteText = pasteText.replace(/^[ \t]*[•▪o➢✓][ \t]+/gm, '- ');
-
-            // 2. Dọn dẹp các dòng trắng thừa (nhiều hơn 2 dòng Enter liên tiếp gom lại thành 2 dòng)
             pasteText = pasteText.replace(/\n{3,}/g, '\n\n');
-
-            // Chèn văn bản đã dọn sạch vào vị trí con trỏ hiện tại
             const start = this.selectionStart;
             const end = this.selectionEnd;
             this.value = this.value.substring(0, start) + pasteText + this.value.substring(end);
-            
-            // Di chuyển con trỏ xuống cuối đoạn vừa dán
             this.selectionStart = this.selectionEnd = start + pasteText.length;
         });
 
-        // --- NÂNG CẤP: Hàm chèn Markdown tự động ---
         function insertMarkdown(type) {
             const textarea = document.getElementById('newManual');
             const start = textarea.selectionStart;
@@ -271,7 +333,6 @@
             let replacement = '';
             let cursorOffset = 0; 
 
-            // Hàm phụ kiểm tra xem có cần tự động xuống dòng không
             const getPrefix = () => (start === 0 || text.charAt(start - 1) === '\n') ? '' : '\n';
 
             switch (type) {
@@ -292,66 +353,51 @@
                     cursorOffset = selected ? replacement.length : (getPrefix().length + 2);
                     break;
                 case 'olist':
-                    // Danh sách số cho các Bước
                     replacement = `${getPrefix()}1. ${selected}`;
                     cursorOffset = selected ? replacement.length : (getPrefix().length + 3);
                     break;
                 case 'quote':
-                    // Đòn bẩy: Tự động in đậm chữ Lưu ý
                     replacement = `${getPrefix()}> **Lưu ý:** ${selected}`;
                     cursorOffset = selected ? replacement.length : (getPrefix().length + 13);
                     break;
                 case 'hr':
-                    // Đường kẻ ngang
                     replacement = `${getPrefix()}---\n`;
                     cursorOffset = replacement.length;
                     break;
             }
 
-            // Chèn text mới vào
             textarea.value = text.substring(0, start) + replacement + text.substring(end);
-            
-            // Focus lại textarea và đưa con trỏ vào đúng vị trí cần gõ tiếp
             textarea.focus();
             textarea.setSelectionRange(start + cursorOffset, start + cursorOffset);
         }
-        // ---------------------------------------------
 
-        // Lấy dữ liệu thêm bằng tay từ LocalStorage
         function getCustomManuals() {
             return JSON.parse(localStorage.getItem('customManuals') || '[]');
         }
 
-        // Xử lý khi Submit form thêm mới
         addForm.addEventListener('submit', (e) => {
             e.preventDefault();
             const newItem = {
                 sku: document.getElementById('newSku').value.trim(),
                 name: document.getElementById('newName').value.trim(),
                 manual: document.getElementById('newManual').value.trim(),
-                isCustom: true // Đánh dấu là hàng thêm bằng tay
+                isCustom: true
             };
 
-            // Lưu vào LocalStorage
             const customManuals = getCustomManuals();
-            // Xóa cái cũ nếu trùng SKU
             const filteredManuals = customManuals.filter(item => item.sku !== newItem.sku);
             filteredManuals.push(newItem);
             localStorage.setItem('customManuals', JSON.stringify(filteredManuals));
 
-            // Thêm vào danh sách hiện tại và render lại
             database = [newItem, ...database.filter(item => item.sku !== newItem.sku)];
             renderList(database);
             
-            // Hiển thị luôn lên màn hình in
             showPreview(newItem);
             closeAddModal();
         });
 
-
-        // BƯỚC 2: LOGIC LƯU TRỮ HEADER/FOOTER (Auto-Save)
         function initEditableFields() {
-            const editableFields = document.querySelectorAll('.editable-field');
+            const editableFields = document.querySelectorAll('.editable-field[data-storage-key]');
             editableFields.forEach(field => {
                 const storageKey = field.getAttribute('data-storage-key');
                 const savedData = localStorage.getItem(storageKey);
@@ -363,7 +409,6 @@
             });
         }
 
-        // BƯỚC 3: LOGIC QR CODE (Marketing Asset)
         function generateQRCode(link) {
             qrcodeContainer.innerHTML = ''; 
             if (!link || link.trim() === '') {
@@ -419,7 +464,6 @@
         }
         paperSizeSelect.addEventListener('change', (e) => updatePaperSize(e.target.value));
 
-        // Tải dữ liệu từ Sheets
         async function loadDataFromSheets() {
             productList.innerHTML = '<li class="p-4 text-blue-500 text-center animate-pulse font-medium">⏳ Đang đồng bộ dữ liệu...</li>';
             
@@ -509,7 +553,20 @@
             previewName.textContent = item.name;
             previewSku.textContent = item.sku;
             const rawManual = item.manual || "";
+            
+            // Render Markdown ra HTML
             previewSteps.innerHTML = marked.parse(rawManual);
+            
+            // Reset lại CSS về mặc định khi mở SP mới
+            currentFontSize = 18;
+            currentLineHeight = 1.6;
+            previewSteps.style.fontSize = `${currentFontSize}px`;
+            previewSteps.style.lineHeight = currentLineHeight;
+
+            // ĐÒN BẨY: Chạy Auto-Fit tự động (Cần timeout nhỏ để DOM kịp render kích thước)
+            setTimeout(() => {
+                autoFit();
+            }, 50);
         }
 
         searchInput.addEventListener('input', (e) => {
